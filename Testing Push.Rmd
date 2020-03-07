@@ -1,0 +1,29 @@
+---
+title: "Testing Push"
+author: "Bill Lang"
+date: "3/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+mpg
+
+mpg2 <- mpg %>% select(-manufacturer,-model)
+
+names(mpg2)
+
+model1 <- lm(displ~cyl + hwy,mpg2)
+
+summary(model1)
+```
+
+```{r}
+ggplot(diamonds) + geom_point(aes(x=carat, y=price, color=cut)) + geom_smooth(aes(x=carat, y=price, color=cut))
+```
+
