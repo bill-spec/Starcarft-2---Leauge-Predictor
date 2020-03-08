@@ -1,0 +1,125 @@
+---
+title: "Starcarft 2 Linear Model Non-Categorical"
+author: "Bill Lang"
+date: "1/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(MASS)
+library(car) #VIF
+library(rpart)
+library(partykit)
+library(caret)
+library(tidyverse)
+library(leaps)
+```
+
+Reading in the data. 
+
+```{r}
+league
+```
+
+Standard linear model 
+
+It is imperfect to use a categorical predictor on a standard lm model but since the data is ordianl we will coninue to use it. 
+
+```{r}
+model1 <- lm(LeagueIndex ~., league)
+summary(model1)
+
+anova(model1)
+```
+
+As shown by the plots below the categorical response variable gives us some unquie answers. 
+
+```{r}
+par(mfrow=c(2,2))
+plot(model1)
+```
+
+Briefly Calculating a base MSE and a cross validated counter part shows us that they are very similar to one another. Implying we have dealt with signifigant outliers and that our base MSE for this model is somewhere around 0.9312.
+
+Regular Test Error
+
+```{r}
+train <- sample(3328, 2662)
+test <- -train
+
+leagueTrain <- league[train,]
+leagueTest <- league[test,]
+
+modelTrain <- lm(LeagueIndex ~., leagueTrain)
+
+MSE0 <- mean( (predict(modelTrain, leagueTest) - leagueTest$LeagueIndex)^2 )
+MSE0
+
+sqrt(MSE0)
+```
+
+Cross Validation test error
+
+```{r}
+model <- train(LeagueIndex ~., league,
+               method = "lm",
+               trControl = trainControl(method = "cv", number = 10, verboseIter = TRUE)
+               )
+model
+```
+
+
+
+
+
+
+
+
+
+
+Best Subset Selection
+
+```{r}
+regfit.full <- regsubsets(LeagueIndex ~., league,nvmax = 19)
+reg.summary <- summary(regfit.full)
+
+
+minRss <- which.min(reg.summary$rss)
+maxAdj <- which.max(reg.summary$adjr2)
+minCp <- which.min(reg.summary$cp)
+minBIC <- which.min(reg.summary$bic)
+
+
+par(mfrow=c(2,2))
+plot(reg.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "b")
+points(minRss, reg.summary$rss[minRss],col = "red", cex = 2, pch=20)
+plot(reg.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "b")
+points(maxAdj, reg.summary$adjr2[maxAdj],col = "red", cex = 2, pch=20)
+plot(reg.summary$cp, xlab = "Number of Variables", ylab = "CP", type = "b")
+points(minCp, reg.summary$cp[minCp],col = "red", cex = 2, pch=20)
+plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "b")
+points(minBIC, reg.summary$bic[minBIC],col = "red", cex = 2, pch=20)
+
+coef(regfit.full, 15)
+
+```
+
+
+Forward Selection
+
+```{r}
+regfit.forward <- regsubsets(LeagueIndex ~., league,nvmax = 19, method = "forward")
+summary(regfit.forward)
+```
+
+
+Backward Selection 
+
+```{r}
+regfit.backward <- regsubsets(LeagueIndex ~., league,nvmax = 19, method = "backward")
+summary(regfit.backward)
+```
+
+
+
