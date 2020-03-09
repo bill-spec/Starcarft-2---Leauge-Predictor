@@ -7,24 +7,77 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(glmnet)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Decision tree
 
-```{r cars}
-summary(cars)
+```{r}
+data
+
+
+n <- nrow(data)
+test_idx <- sample.int(n, size = round(0.2*n))
+train <- data[-test_idx,]
+
+
+form <- as.formula("LeagueIndex ~ Age + HoursPerWeek + SelectByHotkeys + AssignToHotkeys + UniqueHotkeys + MinimapAttacks + NumberOfPACs + GapBetweenPACs + ActionLatency + ActionsInPAC + TotalMapExplored + WorkersMade + UniqueUnitsMade + ComplexUnitsMade")
+
+tree <- rpart(form, data)
+
+tree
+
+
+plot(tree)
+
+text(tree, use.n = TREU, all = TRUE, cex = .2)
+
+
+plot(as.party(tree))
+as.party(tree)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+Classification (Middle Split)
+
+
+```{r}
+class <- data %>% 
+  mutate(Leauge = ifelse((LeagueIndex >= 4), 1, 0))
+class
+```
+```{r}
+
+trainid <- sample(1:nrow(class), nrow(data)*0.8 , replace=F)
+train <- class[trainid,]
+test <- class[-trainid,]
+dim(train); dim(test)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+logit <- glm(Leauge~ Age + HoursPerWeek + SelectByHotkeys + AssignToHotkeys + UniqueHotkeys + MinimapAttacks + NumberOfPACs + GapBetweenPACs + ActionLatency + ActionsInPAC + TotalMapExplored + WorkersMade + UniqueUnitsMade + ComplexUnitsMade, data = train, family = "binomial")
+
+logitProb <- predict(logit, test, type = "response")
+
+logitPred <- ifelse(logitProb > 0.5, 1, 0)
+
+table(logitPred, test$Leauge)
+
+mean(logitPred != test$Leauge)
+
+```
+
+KNN
+
+```{r}
+
+
+
+```
+
