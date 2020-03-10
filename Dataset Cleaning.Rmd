@@ -8,10 +8,14 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(readr)
 ```
 
 ```{r}
-league <- read.csv("C:/Users/Billy/Desktop/Starcraft 2/Leauge.csv")
+urlfile = "https://raw.githubusercontent.com/bill-spec/Starcarft-2---Leauge-Predictor/master/Leauge.csv"
+
+league <- read.csv(url(urlfile))
+
 head(league)
 ```
 
@@ -24,14 +28,19 @@ league <- league %>% na.omit()
 dim(league)
 ```
 
-TotalHours and HoursPerWeek may be inproperly inputted (higher than is possible)
+
+
+
+
+
+TotalHours and HoursPerWeek may be inproperly inputted. Many observations have times higher than possible. 
 
 ```{r}
 league %>% group_by(HoursPerWeek) %>% summarise(number = n()) %>% arrange(desc(HoursPerWeek))
 league %>% filter(HoursPerWeek > 56) %>% arrange(desc(HoursPerWeek))
 
-#Any observations above 112 hours per week will be removed. This decision is arbitrary. 
-#This is removing three observations. 
+#Any observations above 112 hours per week will be removed. This decision is arbitrary although should be consistent within the context of starcraft. 
+#Players will play a lot, but it need not be above 112 hours. This is removing three observations. 
 
 league <- league %>% filter(HoursPerWeek < 100) %>% arrange(desc(HoursPerWeek))
 dim(league)
@@ -47,6 +56,10 @@ league <- league %>% filter(TotalHours < 9000) %>% arrange(desc(TotalHours))
 dim(league)
 ```
 
+
+
+
+
 These observations had been described as being repeated from idenitcal players and thus are being removed. 
 
 ```{r}
@@ -57,15 +70,15 @@ These observations had been described as being repeated from idenitcal players a
 
 
 
-
-
-
-Another important thing to note is that many of the ingame actions are only signifigant in terms of the length of the game. With that in mind another dataset will be generated, dividing those important statistics by the max time stamp. Some statistics were collected per timestamp already (SelectByHotkeys, )
+This should now be the final dataset. 
 
 ```{r}
-leaguePerTimeStamp <- league
-names(leaguePerTimeStamp)
-df[,1:5] / df[,6] 
+dim(league)
+league
+
+summary(league)
+
+
 ```
 
 
