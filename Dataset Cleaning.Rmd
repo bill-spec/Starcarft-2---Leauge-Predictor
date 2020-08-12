@@ -12,15 +12,8 @@ library(readr)
 ```
 
 ```{r}
-
-urlfile = "https://raw.githubusercontent.com/bill-spec/Starcarft-2---Leauge-Predictor/master/Leauge.csv"
-
-league <- read.csv(url(urlfile))
-
-save(league, file = "league.RData")
-
 load("league.RData")
-
+head(league)
 ```
 
 ```{r}
