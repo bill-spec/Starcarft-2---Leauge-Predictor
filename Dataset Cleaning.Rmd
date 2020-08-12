@@ -11,8 +11,7 @@ library(tidyverse)
 ```
 
 ```{r}
-league <- read.csv("C:/Users/Billy/Desktop/Starcraft 2/Leauge.csv")
-head(league)
+load("league.RData")
 ```
 
 ```{r}
