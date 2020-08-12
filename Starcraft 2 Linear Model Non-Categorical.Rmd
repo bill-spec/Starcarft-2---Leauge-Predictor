@@ -19,10 +19,13 @@ library(leaps)
 Reading in the data. 
 
 ```{r}
-league
+head(league)
 ```
 
-Standard linear model 
+
+
+
+**Standard Linear Model** 
 
 It is imperfect to use a categorical predictor on a standard lm model but since the data is ordianl we will coninue to use it. 
 
@@ -40,7 +43,32 @@ par(mfrow=c(2,2))
 plot(model1)
 ```
 
-Briefly Calculating a base MSE and a cross validated counter part shows us that they are very similar to one another. Implying we have dealt with signifigant outliers and that our base MSE for this model is somewhere around 0.9312.
+
+
+**Interactions**
+
+```{r}
+modelInter <- lm(LeagueIndex ~. + TotalHours:APM + APM:ComplexAbilityUsed, league)
+summary(modelInter)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Error**
+
+Briefly calculating a base MSE and a cross validated counter part shows us that they are very similar to one another. Implying we have dealt with any signifigant outliers and that our base MSE for this model is somewhere around $0.9312$.
 
 Regular Test Error
 
@@ -78,6 +106,13 @@ model
 
 
 
+
+
+
+
+
+**Subset Selection**
+
 Best Subset Selection
 
 ```{r}
@@ -90,36 +125,19 @@ maxAdj <- which.max(reg.summary$adjr2)
 minCp <- which.min(reg.summary$cp)
 minBIC <- which.min(reg.summary$bic)
 
+minRss;maxAdj;minCp;minBIC
 
-par(mfrow=c(2,2))
-plot(reg.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "b")
-points(minRss, reg.summary$rss[minRss],col = "red", cex = 2, pch=20)
-plot(reg.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "b")
-points(maxAdj, reg.summary$adjr2[maxAdj],col = "red", cex = 2, pch=20)
-plot(reg.summary$cp, xlab = "Number of Variables", ylab = "CP", type = "b")
-points(minCp, reg.summary$cp[minCp],col = "red", cex = 2, pch=20)
-plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "b")
-points(minBIC, reg.summary$bic[minBIC],col = "red", cex = 2, pch=20)
+
+plot(regfit.full, scale = "r2")
+plot(regfit.full, scale = "adjr2")
+plot(regfit.full, scale = "bic")
+plot(regfit.full, scale = "Cp")
 
 coef(regfit.full, 15)
 
 ```
 
 
-Forward Selection
-
-```{r}
-regfit.forward <- regsubsets(LeagueIndex ~., league,nvmax = 19, method = "forward")
-summary(regfit.forward)
-```
-
-
-Backward Selection 
-
-```{r}
-regfit.backward <- regsubsets(LeagueIndex ~., league,nvmax = 19, method = "backward")
-summary(regfit.backward)
-```
 
 
 

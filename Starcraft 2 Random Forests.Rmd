@@ -1,0 +1,69 @@
+---
+title: "Random Forest"
+author: "Bill Lang"
+date: "7/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(randomForest)
+```
+
+```{r}
+league
+data <- na.omit(league)
+data <- data %>% remove_rownames %>% column_to_rownames(var = "GameID")
+data
+```
+
+
+
+#Regression Random Forest
+
+```{r}
+set.seed(343)
+train <- sample(nrow(data)*.8)
+training <- data[train,]
+testing <- data[-train,]
+```
+
+```{r}
+errors <- c(1:19)
+for(i in 1:19){
+mod <- randomForest(LeagueIndex~., mtry = i, ntrees = 1000, data = training)
+yhat <- predict(mod, newdata = testing)
+MSE <- mean( (yhat - testing$LeagueIndex)^2 )
+errors[i] <- MSE
+}
+errors
+which.min(errors);min(errors)
+hist(errors)
+```
+
+
+#Classification Forest
+
+```{r}
+set.seed(343)
+data2 <- data 
+data2$LeagueIndex <- as.factor(data2$LeagueIndex)
+train <- sample(nrow(data2)*.8)
+training <- data2[train,]
+testing <- data2[-train,]
+```
+
+```{r}
+errors <- c(1:19)
+for(i in 1:19){
+mod <- randomForest(LeagueIndex~., mtry = i, ntrees = 1000, data = training)
+yhat <- predict(mod, newdata = testing)
+MSE <- mean( (yhat != testing$LeagueIndex) )
+errors[i] <- MSE
+}
+errors
+which.min(errors);min(errors)
+```
+
+
