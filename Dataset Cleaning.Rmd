@@ -25,12 +25,7 @@ league <- league %>% na.omit()
 dim(league)
 ```
 
-
-
-
-
-
-TotalHours and HoursPerWeek may be inproperly inputted. Many observations have times higher than possible. 
+TotalHours and HoursPerWeek may be inproperly inputted. Many observations have times higher than what is possible and are removed for that reason. 
 
 ```{r}
 league %>% group_by(HoursPerWeek) %>% summarise(number = n()) %>% arrange(desc(HoursPerWeek))
@@ -53,28 +48,12 @@ league <- league %>% filter(TotalHours < 9000) %>% arrange(desc(TotalHours))
 dim(league)
 ```
 
-
-
-
-
-These observations had been described as being repeated from idenitcal players and thus are being removed. 
+Final Dataset.
 
 ```{r}
 
-```
-
-
-
-
-
-This should now be the final dataset. 
-
-```{r}
-dim(league)
-league
-
-summary(league)
-
+leagueData <- league
+save(leagueData, file = "cleanedLeague.RData")
 
 ```
 

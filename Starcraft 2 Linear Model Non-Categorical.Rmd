@@ -19,8 +19,70 @@ library(leaps)
 Reading in the data. 
 
 ```{r}
-head(league)
+load("cleanedLeague.RData")
+head(leagueData)
 ```
+
+```{r}
+leagueData
+```
+
+
+```{r}
+cor(leagueData)
+```
+
+
+```{r}
+plot(leagueData[,c(1,5,16)])
+```
+
+
+```{r}
+regfit.full <- regsubsets(LeagueIndex ~., leagueData,nvmax = 19)
+reg.summary <- summary(regfit.full)
+
+minRss <- which.min(reg.summary$rss)
+maxAdj <- which.max(reg.summary$adjr2)
+minCp <- which.min(reg.summary$cp)
+minBIC <- which.min(reg.summary$bic)
+
+minRss;maxAdj;minCp;minBIC
+
+
+plot(regfit.full, scale = "r2")
+plot(regfit.full, scale = "adjr2")
+plot(regfit.full, scale = "bic")
+plot(regfit.full, scale = "Cp")
+
+coef(regfit.full, 15)
+
+```
+
+
+```{r}
+leagueData <- leagueData %>% filter(LeagueIndex > 3)
+WorkersMadeMod <- lm(LeagueIndex ~ WorkersMade,leagueData)
+APMmod <- lm(LeagueIndex ~ APM ,leagueData)
+hotkeysMod <- lm(LeagueIndex ~ SelectByHotkeys,leagueData)
+
+summary(APMmod)
+summary(WorkersMadeMod)
+summary(WorkersMadeMod)
+summary(lm(LeagueIndex ~ .,leagueData))
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
