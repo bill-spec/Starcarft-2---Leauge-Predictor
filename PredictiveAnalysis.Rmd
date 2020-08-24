@@ -69,7 +69,6 @@ leagueShuffed
 
 ```{r}
 errors <- matrix(nrow = 10, ncol = 19)
-
 for(j in 1:10){
   
   testing <- leagueShuffed[c(div1[j]:div2[j]),]
@@ -83,14 +82,13 @@ for(j in 1:10){
   }
 }
 
-errors
 which(errors == min(errors), arr.ind = TRUE);min(errors)
 hist(colMeans(errors), breaks = 30)
 errors <- as.data.frame(errors)
-errors
 errors <- errors %>% pivot_longer(V1:V19, names_to = "mtry", values_to = "ErrorRate")
 errors
-ggplot(errors, mapping = aes(ErrorRate)) + 
+
+ggplot(errors, mapping = aes(ErrorRate), bins = 10) + 
   geom_histogram()+
   xlab("Error Rate")+
   ylab("Frequency")+
@@ -104,15 +102,12 @@ errorData <- as.data.frame(errors)
 errorData <- errorData %>% pivot_longer(V1:V19, names_to = "mtry", values_to = "ErrorRate")
 errorData <- as.data.frame(lapply(errorData, function(y) gsub("V", "", y)))
 errorData <- errorData %>% mutate_all(as.double)
-errorData
 
 errorData %>% ggplot() + 
   geom_boxplot(aes(x = factor(mtry), ErrorRate))+
   xlab("mtry Parameter")+
   ylab("Recorded Error Rate")+
   theme_light()
-
-
 ```
  
 

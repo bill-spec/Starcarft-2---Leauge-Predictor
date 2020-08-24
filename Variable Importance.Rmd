@@ -1,0 +1,246 @@
+---
+title: "Variable Importance"
+author: "Bill Lang"
+date: "8/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(glmnet)
+library(GGally)
+library(randomForest)
+load(file = "cleanedLeague.RData")
+```
+
+
+Data Investigation 
+
+```{r}
+head(leagueData)
+```
+
+The GGally library creates appealing graphics for simple correlation analysis and viewing, something that base R seriously lacks. I make use of it here to manuely make note of varible importance. 
+
+```{r}
+pairPlot <- leagueData %>% 
+  mutate(LeagueIndex = as.factor(LeagueIndex)) %>% 
+  ggpairs(columns = 1:10,ggplot2::aes(colour=LeagueIndex, alpha = 0.2),progress = FALSE) 
+suppressMessages(print(pairPlot))
+```
+
+
+```{r}
+pairPlot2 <- leagueData %>% 
+  mutate(LeagueIndex = as.factor(LeagueIndex)) %>% 
+  ggpairs(columns = c(1,10:19),ggplot2::aes(colour=LeagueIndex, alpha = 0.2),progress = FALSE) 
+suppressMessages(print(pairPlot2))
+```
+
+
+```{r}
+ggcorr(leagueData, method = c("everything", "pearson")) 
+```
+
+For simplicity I only decided to use on regularization technique, the lasso (least absolute shrinkage and selection operator; what a cool name). I made use of the glmnet package for most of the heavy lifting and interpret the results below.
+
+Lasso 
+
+```{r}
+set.seed(343)
+```
+
+
+```{r}
+set.seed(343)
+shuf <- sample(1:nrow(leagueData))
+leagueData <- leagueData[shuf,]
+
+x <- model.matrix(LeagueIndex~.,leagueData)[,-1]
+y <- leagueData$LeagueIndex
+
+
+lassoModel <- cv.glmnet(x = x[1:2500,], y = y[1:2500], alpha =1) 
+plot(lassoModel)
+bestlam <- lassoModel$lambda.min
+lassoPred <- predict(lassoModel,s = bestlam, newx = x[2501:3000,])
+mean((lassoPred - y[2501:3000])^2)
+bestlam
+```
+
+
+```{r}
+out <- glmnet(x,y,alpha =1, lambda = bestlam)
+lassoCoef <- predict(out,type = "coefficients",s=bestlam)[1:20,]
+lassoCoef
+```
+
+
+
+
+
+Building and cross validation a naive linear model.
+
+```{r}
+div1 <- c(0,333,665,998,1330,1662,1994,2326,2658,2990)
+div2 <- c(332,664,997,1329,1661,1993,2325,2657,2989,3328)
+div1;div2
+shuf <- sample(nrow(leagueData))
+leagueShuffed <- leagueData[shuf,]
+leagueShuffed
+```
+
+```{r}
+error <- c(1:10)
+error
+
+for(j in 1:10){
+  
+  testing <- leagueShuffed[c(div1[j]:div2[j]),]
+  training <- leagueShuffed[-c(div1[j]:div2[j]),]
+  
+
+    mod <- lm(LeagueIndex~., data = training)
+    yhat <- predict(mod, newdata = testing)
+    MSE <- mean( (yhat - testing$LeagueIndex)^2 )
+    error[j] <- MSE
+
+}
+
+error
+which(error == min(error), arr.ind = TRUE);min(error)
+hist(error)
+```
+
+
+Building and cross validation a Random Forest Regression Model.
+
+
+Manual cross-validation for both the error rate and the mtry parameter. The default for the mtry of this packages is $\sqrt p$ which would be $4.5$, however, cross validation found anything between $3$ and $9$ provided the best, identical results. 
+
+```{r}
+set.seed(343)
+div1 <- c(0,333,665,998,1330,1662,1994,2326,2658,2990)
+div2 <- c(332,664,997,1329,1661,1993,2325,2657,2989,3328)
+div1;div2
+shuf <- sample(nrow(leagueData))
+leagueShuffed <- leagueData[shuf,]
+```
+
+```{r}
+errors <- matrix(nrow = 10, ncol = 19)
+for(j in 1:10){
+  
+  testing <- leagueShuffed[c(div1[j]:div2[j]),]
+  training <- leagueShuffed[-c(div1[j]:div2[j]),]
+  
+  for(i in 1:19){
+    mod <- randomForest(LeagueIndex~., mtry = i, ntrees = 1000, data = training)
+    yhat <- predict(mod, newdata = testing)
+    MSE <- mean( (yhat - testing$LeagueIndex)^2 )
+    errors[j,i] <- MSE
+  }
+}
+
+which(errors == min(errors), arr.ind = TRUE);min(errors)
+hist(colMeans(errors), breaks = 30)
+errors <- as.data.frame(errors)
+errors <- errors %>% pivot_longer(V1:V19, names_to = "mtry", values_to = "ErrorRate")
+errors
+
+ggplot(errors, mapping = aes(ErrorRate), bins = 10) + 
+  geom_histogram()+
+  xlab("Error Rate")+
+  ylab("Frequency")+
+  theme_light()
+```
+
+Most of the mtry parameters performed similiarly to one another after 3. We can conclude that the random forest default of $\sqrt p$ would likely perform well. 
+
+```{r}
+errorData <- as.data.frame(errors)
+errorData <- errorData %>% pivot_longer(V1:V19, names_to = "mtry", values_to = "ErrorRate")
+errorData <- as.data.frame(lapply(errorData, function(y) gsub("V", "", y)))
+errorData <- errorData %>% mutate_all(as.double)
+
+errorData %>% ggplot() + 
+  geom_boxplot(aes(x = factor(mtry), ErrorRate))+
+  xlab("mtry Parameter")+
+  ylab("Recorded Error Rate")+
+  theme_light()
+```
+ 
+ 
+ 
+ 
+ 
+Classification 
+
+
+
+
+
+```{r}
+set.seed(343)
+div1 <- c(0,333,665,998,1330,1662,1994,2326,2658,2990)
+div2 <- c(332,664,997,1329,1661,1993,2325,2657,2989,3328)
+div1;div2
+shuf <- sample(nrow(leagueData))
+leagueShuffed <- leagueData[shuf,]
+leagueShuffed <- leagueShuffed %>% mutate(LeagueIndex = as.factor(LeagueIndex))
+```
+
+
+```{r}
+
+
+mod <- randomForest(LeagueIndex~., ntrees = 1000, data = leagueShuffed[1:2700,])
+yhat <- predict(mod, newdata = leagueShuffed[2701:nrow(leagueShuffed),])
+MSE <- mean( (yhat != leagueShuffed[2701:nrow(leagueShuffed),]$LeagueIndex) )
+MSE
+
+which(errors == min(errors), arr.ind = TRUE);min(errors)
+hist(colMeans(errors), breaks = 30)
+errors <- as.data.frame(errors)
+errors <- errors %>% pivot_longer(V1:V19, names_to = "mtry", values_to = "ErrorRate")
+errors
+
+ggplot(errors, mapping = aes(ErrorRate), bins = 10) + 
+  geom_histogram()+
+  xlab("Error Rate")+
+  ylab("Frequency")+
+  theme_light()
+```
+
+
+
+```{r}
+errors <- matrix(nrow = 10, ncol = 19)
+for(j in 1:10){
+  
+  testing <- leagueShuffed[c(div1[j]:div2[j]),]
+  training <- leagueShuffed[-c(div1[j]:div2[j]),]
+  
+  for(i in 1:19){
+    mod <- randomForest(LeagueIndex~., mtry = i, ntrees = 500, data = training)
+    yhat <- predict(mod, newdata = testing)
+    MSE <- mean( (yhat != testing$LeagueIndex) )
+    errors[j,i] <- MSE
+  }
+}
+
+which(errors == min(errors), arr.ind = TRUE);min(errors)
+hist(colMeans(errors), breaks = 30)
+errors <- as.data.frame(errors)
+errors <- errors %>% pivot_longer(V1:V19, names_to = "mtry", values_to = "ErrorRate")
+errors
+
+ggplot(errors, mapping = aes(ErrorRate), bins = 10) + 
+  geom_histogram()+
+  xlab("Error Rate")+
+  ylab("Frequency")+
+  theme_light()
+```
+
+
